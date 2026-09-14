@@ -1,0 +1,35 @@
+{
+  "name": "pi-notifocus",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": "Devin",
+  "repository": { "type": "git", "url": "git+https://github.com/devinat1/pi-notifocus.git" },
+  "homepage": "https://github.com/devinat1/pi-notifocus#readme",
+  "bugs": { "url": "https://github.com/devinat1/pi-notifocus/issues" },
+  "files": ["index.ts", "store.ts", "platform.ts", "launch.ts", "README.md", "LICENSE"],
+  "bundledDependencies": ["@jmcombs/pi-notify", "pi-intercom"],
+  "publishConfig": { "access": "public" },
+  "type": "module",
+  "description": "One shared 52/7 notification check-in cycle for local Pi sessions",
+  "keywords": ["pi-package"],
+  "pi": { "extensions": ["./index.ts", "./node_modules/pi-intercom/index.ts"] },
+  "scripts": {
+    "test": "tsx --test *.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@jmcombs/pi-notify": "1.1.0",
+    "pi-intercom": "0.13.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-ai": "*",
+    "typebox": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "engines": { "node": ">=22.19.0" }
+}

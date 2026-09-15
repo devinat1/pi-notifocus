@@ -27,6 +27,7 @@ export async function notifySummary(exec: ExtensionAPI['exec'], body: string, cw
   renameSync(temporary, config);
   const launcher = join(dirname(fileURLToPath(import.meta.url)), 'launch.ts');
   const click = [process.execPath, '--experimental-strip-types', launcher, config].map(quote).join(' ');
-  await command(exec, notifier, ['-title', 'Pi · 7-minute check-in', '-message', body,
+  // terminal-notifier requires a leading escape for bullets and property-list punctuation.
+  await command(exec, notifier, ['-title', 'Pi · 7-minute check-in', '-message', '\\' + body,
     '-group', 'pi-notifocus', '-execute', click]);
 }

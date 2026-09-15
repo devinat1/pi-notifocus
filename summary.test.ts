@@ -69,7 +69,10 @@ test('any terminal can summarize once, persist the hub view, and reuse exact Int
     assert.equal(summaries, 1);
     assert.match(store.summary()!.content, /Phone feature: ready for review/);
     assert.equal(views.length, 0, 'summary does not clutter the original chat');
-    assert.equal(executions.filter(x => x.program === '/test/terminal-notifier').length, 1);
+    const notifications = executions.filter(x => x.program === '/test/terminal-notifier');
+    assert.equal(notifications.length, 1);
+    assert.equal(notifications[0].args[notifications[0].args.indexOf('-message') + 1], '\\- Phone feature: ready for review.',
+      'escape the leading bullet so terminal-notifier reads it as message text');
     assert.ok(executions.every(x => !JSON.stringify(x).includes('tmux')));
     timers[0](); for (let i = 0; i < 10; i++) await Promise.resolve();
     assert.equal(summaries, 1);

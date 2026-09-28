@@ -94,3 +94,53 @@ test('any terminal can summarize once, persist the hub view, and reuse exact Int
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('empty check-in still sends one notification without calling the summary model', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'notifocus-empty-'));
+  const previous = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = dir;
+  const timers: Array<() => void> = [];
+  const realSetInterval = global.setInterval;
+  global.setInterval = ((callback: () => void) => { timers.push(callback); return { unref() {} }; }) as unknown as typeof setInterval;
+  const executions: { program: string; args: string[] }[] = [];
+  const handlers = new Map<string, any[]>();
+  let summaries = 0;
+  const pi = {
+    on(name: string, fn: any) { handlers.set(name, [...handlers.get(name) ?? [], fn]); },
+    registerCommand() {}, registerFlag() {}, getFlag() { return false; }, getSessionName() { return 'Empty'; },
+    exec: async (program: string, args: string[]) => {
+      executions.push({ program, args });
+      return { code: 0, stdout: program === '/usr/bin/which' ? '/test/terminal-notifier\n' : '', stderr: '', killed: false };
+    },
+    events: {
+      on() { return () => {}; },
+      emit(_name: string, registration: any) { registration.onReady({ snapshot: () => ({ connected: true }), listSessions: async () => [] }); },
+    },
+  } as unknown as ExtensionAPI;
+  const ctx = {
+    mode: 'tui', cwd: '/tmp/project', model: { id: 'test-model', provider: 'test-provider' },
+    modelRegistry: { complete: async () => { summaries++; throw new Error('empty check-in should not summarize'); } },
+    ui: { setStatus() {}, notify() {} },
+    sessionManager: { getSessionId: () => 'empty', getSessionFile: () => '/tmp/empty.jsonl', getEntries: () => [], getBranch: () => [] },
+  } as unknown as ExtensionContext;
+  const store = new FocusStore(join(dir, 'notifocus', 'state.sqlite'));
+  store.start(Date.now() - FOCUS_MS - 100);
+  notifocus(pi);
+  const fire = async (name: string) => { for (const fn of handlers.get(name) ?? []) await fn({}, ctx); };
+  try {
+    await fire('session_start');
+    timers[0]();
+    for (let i = 0; i < 20; i++) await Promise.resolve();
+    assert.equal(summaries, 0);
+    assert.match(store.summary()!.content, /no sessions need attention/i);
+    assert.equal(executions.filter(x => x.program === '/test/terminal-notifier').length, 1);
+    timers[0]();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    assert.equal(executions.filter(x => x.program === '/test/terminal-notifier').length, 1);
+  } finally {
+    await fire('session_shutdown');
+    global.setInterval = realSetInterval; store.close();
+    if (previous === undefined) delete process.env.PI_CODING_AGENT_DIR; else process.env.PI_CODING_AGENT_DIR = previous;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

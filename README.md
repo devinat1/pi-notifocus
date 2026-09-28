@@ -2,7 +2,7 @@
 
 Run `/notifocus` in any interactive Pi session on macOS. It starts one shared, continuously repeating **52-minute focus / 7-minute check-in** cycle. No iTerm2, tmux, or particular terminal host is required.
 
-At each check-in start, one participating Pi session claims and summarizes a snapshot of pending top-level sessions using its selected model and existing authentication. One macOS notification opens a dedicated Pi chat in macOS's built-in Terminal when clicked (or focuses it if already running). The original Pi sessions can remain in any terminal. Reply there to route explicit instructions using **pi-intercom**, not a second messaging implementation.
+At each check-in start, one participating Pi session sends one macOS notification. If sessions need attention, it summarizes them using its selected model and existing authentication; otherwise it sends a short “no sessions need attention” check-in. Clicking the notification opens a dedicated Pi chat in macOS's built-in Terminal (or focuses it if already running). The original Pi sessions can remain in any terminal. Reply there to route explicit instructions using **pi-intercom**, not a second messaging implementation.
 
 ## Commands
 
@@ -35,7 +35,7 @@ Disable the separately loaded `npm:@jmcombs/pi-notify` extension using Pi's pack
 
 - Use `agent_settled`, not premature `agent_end`, to record completions; blocking extension dialogs are recorded separately.
 - Manual input, resumed work, `/notifocus ack`, or dialog closure clears the relevant attention state. Merely reading a summary does not.
-- Items arriving after a window's starting boundary wait until the next window. Unresolved items repeat. No empty notifications.
+- Items arriving after a window's starting boundary wait until the next window. Unresolved items repeat. Every check-in sends one notification, including when no sessions need attention.
 - Timer and attention metadata live in `$PI_CODING_AGENT_DIR/notifocus/state.sqlite` (default `~/.pi/agent/notifocus/state.sqlite`), in a private directory. Native SQLite transactions arbitrate claims across processes. A claim is consumed before asynchronous work: a crash can skip a notification, but never duplicate it; pending items remain for the next window.
 - The timer uses wall-clock time. After sleep, old windows are not replayed. No alerts during focus, including if summarization runs late. The summary can still appear in the hub for manual reading.
 - Summary model failure produces a clearly labeled raw pending-item fallback, not a fabricated LLM summary. Errors appear quietly in the footer and `/notifocus status`.
@@ -52,6 +52,6 @@ npm run typecheck
 npm test
 ```
 
-Manual end-to-end: reload two Pi sessions; run `/notifocus`; finish a task in each and confirm no individual desktop alerts; at the check-in, confirm one summary, click to the hub, and send an explicit instruction to one exact session. A completion during the 7-minute window must wait until the next check-in. Run `/notifocus off` to restore ordinary alerts.
+Manual end-to-end: reload two Pi sessions; run `/notifocus`; at a check-in with no pending items, confirm one “no sessions need attention” notification; finish a task and confirm no individual desktop alert; at the next check-in, confirm one summary, click to the hub, and send an explicit instruction to one exact session. A completion during the 7-minute window must wait until the next check-in. Run `/notifocus off` to restore ordinary alerts.
 
 Uninstall by removing this local package from Pi settings and re-enabling the original pi-notify package, then reloading sessions. No installed upstream source files are patched.
